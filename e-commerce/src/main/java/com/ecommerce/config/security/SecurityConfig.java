@@ -12,62 +12,66 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
-	
-	@Bean
-	public static PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
-	
-	@Configuration
-	@Order(1)
-	public static class AdminSecurityConfig extends WebSecurityConfigurerAdapter{
-			
-		@Override
-		protected void configure(HttpSecurity http) throws Exception {
-			
-			http
-				.antMatcher("/admin/**")
-				.authorizeRequests()
-				.anyRequest().hasRole("ADMIN")
-				.and()
-				.httpBasic();
-		}
+public class SecurityConfig {
 
-		@Override
-		protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-			
-			auth
-				.inMemoryAuthentication().withUser("admin")
-				.password(passwordEncoder().encode("admin"))
-				.roles("ADMIN");
-		}
-		
-	}
-	
-	@Configuration
-	@Order(2)
-	public static class UserSecurityConfig extends WebSecurityConfigurerAdapter{
-			
-		@Override
-		protected void configure(HttpSecurity http) throws Exception {	
-			http
-				.antMatcher("/user/**")
-				.authorizeRequests()
-				.anyRequest().hasRole("USER")
-				.and()
-				.formLogin();
-		}
-		
-		@Override
-		protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-			
-			auth
-				.inMemoryAuthentication().withUser("normal_user")
-				.password(passwordEncoder().encode("normal_user"))
-				.roles("USER");
-		}
-		
-	}
+    @Bean
+    public static PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Configuration
+    @Order(1)
+    public static class AdminSecurityConfig extends WebSecurityConfigurerAdapter {
+
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http
+            	.antMatcher("/admin/**")
+            	.authorizeRequests()
+            	.anyRequest()
+            	.hasRole("ADMIN")
+                .and()
+                .formLogin()
+                .loginPage("/admin-login-page")
+                .loginProcessingUrl("/admin/doAdminLogin")
+                .defaultSuccessUrl("/admin/admin-dashboard");
+            
+           http.csrf().disable();        
+        }
+        
+        @Override
+        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+            auth
+	            .inMemoryAuthentication()
+	            .withUser("admin")
+	            .password(passwordEncoder().encode("admin"))
+	            .roles("ADMIN");
+        }
+    }
+
+    @Configuration
+    @Order(2)
+    public static class App2ConfigurationAdapter extends WebSecurityConfigurerAdapter {
+
+        protected void configure(HttpSecurity http) throws Exception {
+            http
+            	.antMatcher("/user/**")
+            	.authorizeRequests().anyRequest().hasRole("USER")
+            	.and()
+            	.formLogin()
+            	.loginPage("/user-login-page")
+            	.loginProcessingUrl("/user/doUserLogin");
+            
+            http.csrf().disable();
+        }
+        
+        @Override
+        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+            auth
+            	.inMemoryAuthentication()
+            	.withUser("user").password(passwordEncoder().encode("user"))
+            	.roles("USER");
+        }
+    }
 
 }
